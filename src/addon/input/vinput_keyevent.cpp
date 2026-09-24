@@ -238,12 +238,11 @@ void VinputEngine::handleKeyEvent(fcitx::Event& event) {
       held_role_ = HotkeyRole::Menu;
       chord_interrupted_ = false;
       held_press_time_ = std::chrono::steady_clock::now();
-      // If palette is currently open, swallow press to prevent leaking to app
-      if (palette_menu_visible_) {
+      // Non-modifier menu keys are owned by the addon. Modifier presses must
+      // reach the client together with their releases to preserve key state.
+      if (!event_key.isModifier()) {
         keyEvent.filterAndAccept();
-        return;
       }
-      // If palette is closed, let press pass through so chords like Shift+A work normally
       return;
     }
     // Key Up (Release) phase
@@ -255,9 +254,10 @@ void VinputEngine::handleKeyEvent(fcitx::Event& event) {
         if (!session_) {
           toggleCommandPalette(ic);
         }
-        keyEvent.filterAndAccept();
-        return;
       }
+    }
+    if (!event_key.isModifier()) {
+      keyEvent.filterAndAccept();
     }
     return;
   }

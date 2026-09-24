@@ -80,6 +80,7 @@ void runAllTests() {
   test_config.setValueByPath("TriggerKey/1", "F8");
   test_config.setValueByPath("CommandKeys/0", "Control_R");
   test_config.setValueByPath("MenuKey/0", "Shift_R");
+  test_config.setValueByPath("MenuKey/1", "F9");
   engine.setConfig(test_config);
 
   std::cout << "--- 1. Testing Single-Modifier Tap (Start & Stop) ---\n";
@@ -171,15 +172,33 @@ void runAllTests() {
   engine.handleKeyEvent(shift_r);
   expect(!shift_r.accepted(), "Interrupted Shift_R release does not accept or trigger palette");
 
-  // 5b. Solo Shift_R tap: press then release without intervening keys toggles palette
+  // 5b. Solo Shift_R tap: both edges reach the client while the palette toggles
   fcitx::KeyEvent solo_shift_p(&ic, fcitx::Key(FcitxKey_Shift_R), false);
   engine.handleKeyEvent(solo_shift_p);
   expect(!solo_shift_p.accepted(), "Solo Shift_R press does not immediately trigger palette");
 
   fcitx::KeyEvent solo_shift_r(&ic, fcitx::Key(FcitxKey_Shift_R), true);
   engine.handleKeyEvent(solo_shift_r);
-  expect(solo_shift_r.filtered() && solo_shift_r.accepted(),
-         "Solo Shift_R release is consumed and triggers palette");
+  expect(!solo_shift_r.filtered() && !solo_shift_r.accepted(),
+         "Solo Shift_R release must reach the client like its press");
+
+  // 5c. Closing the palette must also preserve the modifier press/release pair
+  fcitx::KeyEvent close_shift_p(&ic, fcitx::Key(FcitxKey_Shift_R), false);
+  engine.handleKeyEvent(close_shift_p);
+  expect(!close_shift_p.accepted(), "Shift_R press passes through with palette open");
+
+  fcitx::KeyEvent close_shift_r(&ic, fcitx::Key(FcitxKey_Shift_R), true);
+  engine.handleKeyEvent(close_shift_r);
+  expect(!close_shift_r.accepted(), "Shift_R release passes through with palette open");
+
+  // 5d. Non-modifier menu keys are consumed on both edges
+  fcitx::KeyEvent menu_f9_p(&ic, fcitx::Key(FcitxKey_F9), false);
+  engine.handleKeyEvent(menu_f9_p);
+  expect(menu_f9_p.filtered() && menu_f9_p.accepted(), "F9 menu press is consumed");
+
+  fcitx::KeyEvent menu_f9_r(&ic, fcitx::Key(FcitxKey_F9), true);
+  engine.handleKeyEvent(menu_f9_r);
+  expect(menu_f9_r.filtered() && menu_f9_r.accepted(), "F9 menu release is consumed");
 
   std::cout << "\n✅ ALL TRIGGER TESTS PASSED CLEANLY!\n";
 }
