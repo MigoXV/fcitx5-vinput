@@ -233,6 +233,9 @@ void VinputEngine::handleKeyEvent(fcitx::Event& event) {
 
   // 5. Handle Command Palette Hotkey (menu_keys_, e.g. Shift_R)
   if (is_menu) {
+    const auto& menu_key = menu_keys_[menu_index];
+    const bool pass_menu_modifier =
+        menu_key.isModifier() && menu_key.states().toInteger() == 0;
     if (!keyEvent.isRelease()) {
       held_key_sym_ = event_key.sym();
       held_role_ = HotkeyRole::Menu;
@@ -240,7 +243,7 @@ void VinputEngine::handleKeyEvent(fcitx::Event& event) {
       held_press_time_ = std::chrono::steady_clock::now();
       // Non-modifier menu keys are owned by the addon. Modifier presses must
       // reach the client together with their releases to preserve key state.
-      if (!event_key.isModifier()) {
+      if (!pass_menu_modifier) {
         keyEvent.filterAndAccept();
       }
       return;
@@ -256,7 +259,7 @@ void VinputEngine::handleKeyEvent(fcitx::Event& event) {
         }
       }
     }
-    if (!event_key.isModifier()) {
+    if (!pass_menu_modifier) {
       keyEvent.filterAndAccept();
     }
     return;

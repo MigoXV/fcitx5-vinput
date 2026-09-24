@@ -200,6 +200,21 @@ void runAllTests() {
   engine.handleKeyEvent(menu_f9_r);
   expect(menu_f9_r.filtered() && menu_f9_r.accepted(), "F9 menu release is consumed");
 
+  // 5e. A modified modifier binding owns both edges like any other shortcut
+  test_config.setValueByPath("MenuKey/0", "Control+Shift_R");
+  engine.setConfig(test_config);
+  fcitx::KeyEvent modified_shift_p(
+      &ic, fcitx::Key(FcitxKey_Shift_R, fcitx::KeyState::Ctrl), false);
+  engine.handleKeyEvent(modified_shift_p);
+  expect(modified_shift_p.filtered() && modified_shift_p.accepted(),
+         "Control+Shift_R menu press is consumed");
+
+  fcitx::KeyEvent modified_shift_r(
+      &ic, fcitx::Key(FcitxKey_Shift_R, fcitx::KeyState::Ctrl), true);
+  engine.handleKeyEvent(modified_shift_r);
+  expect(modified_shift_r.filtered() && modified_shift_r.accepted(),
+         "Control+Shift_R menu release is consumed");
+
   std::cout << "\n✅ ALL TRIGGER TESTS PASSED CLEANLY!\n";
 }
 
